@@ -75,6 +75,9 @@ const remove = (req, res) => {
         res.status(400).json({message: 'invalid ID'})
       }
     })
+    .catch(err => {
+      res.status(400).json({message: err.message})
+    })
     
 };
 
@@ -82,6 +85,7 @@ const remove = (req, res) => {
 const edit = (req, res) => {
   const id = req.params.id;
   const data = req.body;
+  const roleId = req.user.role
   if (!Object.keys(data).length) {
     return res.status(400).json({
       message: "Missing Data"
@@ -113,25 +117,34 @@ const edit = (req, res) => {
       },
     });
   } else {
-    const response = userControllers.editUser(id, data)
-    return res.status(200).json({
-      message: 'User edited succesfully',
-      user: response
-    })
+
+    userControllers.editUser(id, data, roleId)
+      .then(response => {
+        res.status(200).json({
+          message: 'User edited succesfully',
+          user: response
+        })
+      })
+      .catch(err => {
+        res.status(400).json({err})
+      })
   }
 };
 
 const getMyUser = (req, res) => {
+  
   const id = req.user.id;
-  const data = userControllers.getUserById(id);
+  console.log("1111111111111111111111111111 ", id)
+  userControllers.getUserById(id)
+    .then(response => {
+      return res.status(200).json(response)
+    })
+    .catch(err => {
+      res.status(404).json({
+        message: `El usuario con el id ${id} no existe`
+      })
+    })
 
-  if (data) {
-    return res.status(200).json(data);
-  } else {
-    return res.status(404).json({
-      message: `El usuario con el id ${id} no existe`
-    });
-  }
 }
 
 
@@ -169,11 +182,17 @@ const editMyUser = (req, res) => {
       },
     });
   } else {
-    const response = userControllers.editUser(id, data)
-    return res.status(200).json({
-      message: 'User edited succesfully',
-      user: response
-    })
+    userControllers.editUser(id, data)
+      .then(response => {
+        return res.status(200).json({
+          message: 'User edited succesfully',
+          user: response
+        })
+      })
+      .catch(err => {
+        res.status(400).json({err})
+      })
+
   }
 
 }
@@ -199,6 +218,17 @@ const postProfileImg = (req, res) => {
 
 }
 
+const getUserRole = (req, res) => {
+  const id = req.params.id
+  userControllers.getUserWithRole(id)
+    .then((response) => {
+      res.status(200).json(response)
+    })
+    .catch(err =>  {
+      res.status(400).json({message: err})
+    })
+}
+
 
 module.exports = {
   getAll,
@@ -209,5 +239,6 @@ module.exports = {
   getMyUser,
   editMyUser,
   removeMyUser,
-  postProfileImg
+  postProfileImg,
+  getUserRole
 };
